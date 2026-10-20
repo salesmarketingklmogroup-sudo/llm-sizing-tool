@@ -1,0 +1,802 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LLM VRAM Calculator — คำนวณ VRAM และความเร็วรัน/เทรน LLM บน GPU | KL-iT ONLINE</title>
+<meta name="description" content="เครื่องคำนวณ VRAM ฟรี: เลือกโมเดล (Llama, Qwen, DeepSeek, Typhoon, Gemma) และ GPU (RTX PRO 6000/5000/4500, RTX 5090, H200, H100) ดูว่ารันหรือ fine-tune ได้ไหม ใช้ VRAM เท่าไร เร็วแค่ไหน พร้อมขอใบเสนอราคา AI workstation / GPU server จาก KL-iT ONLINE">
+<meta name="keywords" content="คำนวณ VRAM, LLM VRAM calculator, การ์ดจอรัน LLM, เครื่องรัน AI, AI workstation, GPU server, RTX PRO 6000, RTX PRO 4500, H200, Llama 70B VRAM, fine-tuning VRAM, QLoRA, KL-iT ONLINE">
+<link rel="canonical" href="https://llmsizingtool.kl-itonline.com/">
+<link rel="alternate" hreflang="th" href="https://llmsizingtool.kl-itonline.com/?lang=th">
+<link rel="alternate" hreflang="en" href="https://llmsizingtool.kl-itonline.com/?lang=en">
+<link rel="alternate" hreflang="x-default" href="https://llmsizingtool.kl-itonline.com/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="KL-iT ONLINE">
+<meta property="og:title" content="LLM VRAM Calculator — คำนวณขนาด GPU สำหรับรัน/เทรน LLM (ฟรี)">
+<meta property="og:description" content="เลือกโมเดลและ GPU แล้วรู้ทันทีว่ารันได้ไหม ใช้ VRAM เท่าไร เร็วแค่ไหน ครอบคลุม RTX PRO 6000/5000/4500, RTX 5090, H200, H100 และอีก 50+ รุ่น โดย KL-iT ONLINE">
+<meta property="og:url" content="https://llmsizingtool.kl-itonline.com/">
+<meta property="og:image" content="https://llmsizingtool.kl-itonline.com/og-image.png">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta property="og:locale" content="th_TH"><meta property="og:locale:alternate" content="en_US">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="LLM VRAM Calculator | KL-iT ONLINE">
+<meta name="twitter:description" content="Free LLM VRAM & speed calculator for inference and fine-tuning on workstation and server GPUs.">
+<meta name="twitter:image" content="https://llmsizingtool.kl-itonline.com/og-image.png">
+<meta name="theme-color" content="#0073BA">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230073BA'/%3E%3Ctext x='16' y='21' font-family='Arial' font-weight='700' font-size='13' fill='white' text-anchor='middle'%3EKL%3C/text%3E%3C/svg%3E">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"SoftwareApplication","name":"KL-iT LLM Sizing Calculator","alternateName":"LLM VRAM Calculator","applicationCategory":"DeveloperApplication","operatingSystem":"Web","url":"https://llmsizingtool.kl-itonline.com/","inLanguage":["th","en"],"isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"THB"},"description":"Free calculator that estimates GPU VRAM requirements and tokens-per-second for LLM inference and fine-tuning (LoRA, QLoRA, full) across 55+ workstation, GeForce and datacenter GPUs.","publisher":{"@type":"Organization","name":"KL-iT ONLINE (KLMO Group Co., Ltd.)","url":"https://www.kl-itonline.com","email":"sales@klmogroup.com","telephone":"+66-95-431-8124"}}
+</script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+/* Layout: two-column workbench (inputs left, live result right) on desktop; stacks on phone.
+   Full GPU fit table below, then a quote-request form that carries the sizing config along. TH/EN switch top-right. */
+:root{
+  --bg:#f5f8fb; --panel:#ffffff; --fg:#1d2a35; --muted:#5d6b78; --line:#d9e2ea;
+  --brand:#0073BA; --brand-ink:#005a93; --teal:#50ADA9; --green:#2fa826; --gray:#414141;
+  --w:#0073BA; --k:#50ADA9; --o:#9aa8b4; --g:#7a5af5;
+  --ok:#2fa826; --warn:#d98c00; --bad:#d13a2f; --ok-bg:#e7f7e4; --warn-bg:#fff4df; --bad-bg:#fde8e6;
+  --font:"Prompt",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  --r:8px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f161c; --panel:#172129; --fg:#e8eef3; --muted:#9fb0bf; --line:#2a3842;
+  --brand:#3aa0e8; --brand-ink:#7cc3f3; --teal:#5fc4bf; --green:#5ddc52; --gray:#c9d2da;
+  --w:#3aa0e8; --k:#5fc4bf; --o:#5c6b78; --g:#a28cff;
+  --ok:#5ddc52; --warn:#f0b443; --bad:#ff7066; --ok-bg:#16301a; --warn-bg:#33270e; --bad-bg:#3a1a18;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f161c; --panel:#172129; --fg:#e8eef3; --muted:#9fb0bf; --line:#2a3842;
+  --brand:#3aa0e8; --brand-ink:#7cc3f3; --teal:#5fc4bf; --green:#5ddc52; --gray:#c9d2da;
+  --w:#3aa0e8; --k:#5fc4bf; --o:#5c6b78; --g:#a28cff;
+  --ok:#5ddc52; --warn:#f0b443; --bad:#ff7066; --ok-bg:#16301a; --warn-bg:#33270e; --bad-bg:#3a1a18;
+  color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:14px;line-height:1.5;margin:0}
+.wrap{max-width:1180px;margin:0 auto;padding-block:20px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:8px 20px;margin-bottom:14px}
+.brand{display:flex;align-items:center;gap:10px}
+.brand .mark{width:34px;height:34px;border-radius:7px;background:linear-gradient(135deg,var(--brand),var(--teal));display:grid;place-items:center;color:#fff;font-weight:700;font-size:13px;letter-spacing:.02em}
+h1{font-size:22px;font-weight:600;margin:0;line-height:1.2;text-wrap:balance}
+.sub{color:var(--muted);font-size:13px;margin:2px 0 0}
+.hdr-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.tag{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:500}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:3px;background:var(--panel)}
+.seg button{font:inherit;font-size:13px;font-weight:500;padding:5px 14px;border:0;border-radius:999px;background:transparent;color:var(--muted);cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--brand);color:#fff}
+.seg.lang button{font-size:12px;padding:4px 10px}
+.notice{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;background:color-mix(in srgb,var(--teal) 12%,var(--panel));border:1px solid color-mix(in srgb,var(--teal) 40%,var(--line));border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:13px}
+.notice b{color:var(--brand-ink)}
+.notice a{color:var(--brand-ink);font-weight:500}
+.modes{margin-bottom:14px}
+.grid{display:grid;grid-template-columns:minmax(0,420px) minmax(0,1fr);gap:18px;align-items:start}
+@media(max-width:820px){.grid{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;min-width:0}
+.panel h2{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 12px}
+.field{display:flex;flex-direction:column;gap:4px;margin-bottom:12px;min-width:0}
+.field label{font-size:12.5px;font-weight:500}
+.field .hint,.hint{font-size:11.5px;color:var(--muted)}
+select,input[type=number],input[type=text],textarea{width:100%;font:inherit;font-size:14px;padding:8px 10px;border:1px solid var(--line);border-radius:var(--r);background:var(--bg);color:var(--fg);min-width:0}
+textarea{font-family:var(--mono);font-size:12.5px;line-height:1.5;resize:vertical}
+select:focus,input:focus,textarea:focus,button:focus-visible{outline:2px solid var(--brand);outline-offset:1px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+@media(max-width:480px){.row3{grid-template-columns:1fr 1fr}}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.chip{font:inherit;font-size:12px;padding:4px 10px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--fg);cursor:pointer}
+.chip[aria-pressed=true]{background:var(--brand);border-color:var(--brand);color:#fff}
+details{border-top:1px dashed var(--line);padding-top:10px;margin-top:4px}
+summary{cursor:pointer;font-size:12.5px;font-weight:500;color:var(--brand-ink)}
+.cb{display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:8px}
+.cb input{width:auto}
+.verdict{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:14px}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;font-weight:600;font-size:14px}
+.pill.ok,.st.ok{background:var(--ok-bg);color:var(--ok)}
+.pill.warn,.st.warn{background:var(--warn-bg);color:var(--warn)}
+.pill.bad,.st.bad{background:var(--bad-bg);color:var(--bad)}
+.verdict .for{color:var(--muted);font-size:13px;min-width:0}
+.bar{height:26px;border-radius:6px;background:var(--line);overflow:hidden;display:flex;position:relative}
+.bar span{height:100%;display:block;transition:width .25s}
+.bar .cap{position:absolute;top:0;bottom:0;width:2px;background:var(--fg);opacity:.6}
+.legend{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:12px;color:var(--muted);margin-top:6px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.vramline{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:6px;flex-wrap:wrap}
+.big{font-family:var(--mono);font-size:26px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.1}
+.big small{font-size:13px;font-weight:400;color:var(--muted);font-family:var(--font)}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:16px 0 6px}
+@media(max-width:480px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi{border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;min-width:0}
+.kpi .l{font-size:11.5px;color:var(--muted)}
+.kpi .v{font-family:var(--mono);font-size:19px;font-weight:600;font-variant-numeric:tabular-nums;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi .v small{font-size:11px;font-weight:400;color:var(--muted);font-family:var(--font)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-size:11.5px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:.05em}
+td.n,th.n{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.note{font-size:12.5px;color:var(--muted);margin:8px 0 0}
+.note.alert{color:var(--warn)}
+.tbl{overflow-x:auto;margin-top:8px}
+.fit,.quote{margin-top:18px}
+.fit .head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.st{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap}
+tr.cur td{background:color-mix(in srgb,var(--brand) 10%,transparent)}
+.cat{font-size:11px;color:var(--muted)}
+.gpu-name{font-weight:500;white-space:nowrap}
+.quote .qgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+@media(max-width:820px){.quote .qgrid{grid-template-columns:minmax(0,1fr)}}
+.qsum{background:var(--bg);border:1px solid var(--line);border-radius:var(--r);padding:12px}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.btn{font:inherit;font-size:13.5px;font-weight:500;padding:9px 16px;border-radius:var(--r);border:1px solid var(--brand);background:var(--brand);color:#fff;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.btn.sec{background:transparent;color:var(--brand-ink)}
+.promise{margin-top:10px;padding:10px 12px;border-radius:var(--r);background:var(--ok-bg);color:var(--ok);font-size:13px;font-weight:500}
+.contact{display:flex;flex-wrap:wrap;gap:16px;align-items:center;margin-top:14px;padding-top:14px;border-top:1px dashed var(--line)}
+.qr{width:132px;height:132px;background:#fff;padding:6px;border-radius:var(--r);flex:0 0 auto}
+.qr img,.qr canvas{display:block;width:120px;height:120px}
+.contact .txt{font-size:13px;min-width:0}
+.contact .txt b{font-family:var(--mono);font-weight:600;user-select:all}
+.toast{font-size:12.5px;color:var(--ok);min-height:1.2em;margin-top:6px}
+.faqs{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:14px 24px}
+.faqs h3{font-size:14px;font-weight:600;margin:0 0 4px;text-wrap:balance}
+.faqs p{margin:0;font-size:13px;color:var(--muted);line-height:1.55}
+footer{margin-top:28px;color:var(--muted);font-size:12px;line-height:1.6;max-width:72ch}
+footer a{color:var(--brand-ink)}
+@media(prefers-reduced-motion:reduce){.bar span{transition:none}}
+</style>
+</head>
+<body>
+<style>html,body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<div class="wrap">
+<header>
+  <div class="brand">
+    <div class="mark">KL</div>
+    <div>
+      <h1>LLM Sizing Calculator</h1>
+      <p class="sub" data-i18n="sub"></p>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <div class="seg lang" role="group" aria-label="Language"><button type="button" id="lTh" aria-pressed="true">ไทย</button><button type="button" id="lEn" aria-pressed="false">EN</button></div>
+    <div class="tag" data-i18n="tag"></div>
+  </div>
+</header>
+
+<div class="notice"><span><b data-i18n="freeTitle"></b> <span data-i18n="freeBody"></span> <a href="https://www.kl-itonline.com" target="_blank" rel="noopener">kl-itonline.com →</a></span></div>
+
+<div class="seg modes" role="group" aria-label="Mode">
+  <button type="button" id="mInf" aria-pressed="true">Inference</button>
+  <button type="button" id="mFt" aria-pressed="false">Fine-tuning</button>
+</div>
+
+<div class="grid">
+<section class="panel" aria-label="Settings">
+  <h2 data-i18n="h.model"></h2>
+  <div class="field">
+    <label for="model" data-i18n="l.model"></label>
+    <select id="model"></select>
+    <span class="hint" id="modelHint"></span>
+  </div>
+  <details id="customWrap"><summary data-i18n="l.custom"></summary>
+    <div class="row3" style="margin-top:10px">
+      <div class="field"><label for="cParams">Params (B)</label><input id="cParams" type="number" step="0.1" min="0.1"></div>
+      <div class="field"><label for="cActive">Active (B)</label><input id="cActive" type="number" step="0.1" min="0.1"></div>
+      <div class="field"><label for="cLayers">Layers</label><input id="cLayers" type="number" step="1" min="1"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label for="cKV">KV heads</label><input id="cKV" type="number" step="1" min="1"></div>
+      <div class="field"><label for="cHD">Head dim</label><input id="cHD" type="number" step="1" min="1"></div>
+    </div>
+    <span class="hint" data-i18n="h.customHint"></span>
+  </details>
+
+  <div id="infFields">
+    <div class="row" style="margin-top:12px">
+      <div class="field"><label for="quant">Weight quantization</label><select id="quant"></select></div>
+      <div class="field"><label for="kvq">KV cache precision</label><select id="kvq"></select></div>
+    </div>
+    <div class="field">
+      <label for="ctx">Context length (tokens)</label>
+      <input id="ctx" type="number" min="256" step="256" value="8192">
+      <div class="chips" id="ctxChips"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label for="users" data-i18n="l.users"></label><input id="users" type="number" min="1" max="256" value="1"><span class="hint" data-i18n="h.users"></span></div>
+      <div class="field"><label for="prompt" data-i18n="l.prompt"></label><input id="prompt" type="number" min="16" step="256" value="1024"><span class="hint">tokens</span></div>
+    </div>
+  </div>
+
+  <div id="ftFields" hidden>
+    <div class="row" style="margin-top:12px">
+      <div class="field"><label for="ftm" data-i18n="l.ftm"></label><select id="ftm">
+        <option value="qlora">QLoRA (base 4-bit)</option><option value="lora">LoRA (base BF16)</option><option value="full">Full fine-tune (BF16 mixed)</option></select></div>
+      <div class="field"><label for="rank">LoRA rank</label><select id="rank"><option>8</option><option selected>16</option><option>32</option><option>64</option><option>128</option></select></div>
+    </div>
+    <div class="row">
+      <div class="field"><label for="seq">Sequence length</label><input id="seq" type="number" min="128" step="128" value="2048"></div>
+      <div class="field"><label for="bs" data-i18n="l.bs"></label><input id="bs" type="number" min="1" max="128" value="2"></div>
+    </div>
+    <label class="cb"><input id="gck" type="checkbox" checked> <span data-i18n="l.gck"></span></label>
+    <label class="cb"><input id="fa" type="checkbox" checked> FlashAttention / SDPA</label>
+    <label class="cb"><input id="opt8" type="checkbox"> <span data-i18n="l.opt8"></span></label>
+    <div class="field"><label for="ds" data-i18n="l.ds"></label><input id="ds" type="number" min="0.1" step="1" value="10"></div>
+  </div>
+
+  <h2 style="margin-top:6px" data-i18n="h.hw"></h2>
+  <div class="field">
+    <label for="gpu">GPU</label>
+    <select id="gpu"></select>
+    <span class="hint" id="gpuHint"></span>
+  </div>
+  <div class="row">
+    <div class="field"><label for="ngpu" data-i18n="l.ngpu"></label><select id="ngpu"><option>1</option><option>2</option><option>3</option><option>4</option><option>6</option><option>8</option></select><span class="hint" id="ngpuHint"></span></div>
+    <div class="field" id="effWrap"><label for="eff">Runtime</label><select id="eff"><option value="0.78">vLLM / TensorRT-LLM</option><option value="0.70">llama.cpp / Ollama / LM Studio</option></select></div>
+  </div>
+  <label class="cb" id="offWrap"><input id="offload" type="checkbox"> <span data-i18n="l.offload"></span></label>
+</section>
+
+<section class="panel" aria-label="Results" aria-live="polite">
+  <h2 id="resTitle"></h2>
+  <div class="verdict"><span class="pill" id="pill">—</span><span class="for" id="for"></span></div>
+  <div class="vramline"><div class="big" id="vramBig">0 <small>GB</small></div><div class="hint" id="vramCap"></div></div>
+  <div class="bar" id="bar" aria-hidden="true"><i class="cap" id="capline"></i></div>
+  <div class="legend" id="legend"></div>
+  <div class="kpis" id="kpis"></div>
+  <div class="tbl"><table>
+    <thead><tr><th data-i18n="th.item"></th><th class="n">GB</th><th data-i18n="th.basis"></th></tr></thead>
+    <tbody id="breakdown"></tbody>
+  </table></div>
+  <p class="note" id="noteMain"></p>
+  <p class="note" id="noteSpeed"></p>
+</section>
+</div>
+
+<section class="panel fit" aria-label="GPU fit">
+  <div class="head">
+    <h2 style="margin:0" data-i18n="h.fit"></h2>
+    <div class="chips" id="catChips" role="group" aria-label="Filter"></div>
+  </div>
+  <p class="hint" style="margin:0 0 6px" id="fitHint"></p>
+  <div class="tbl"><table>
+    <thead><tr><th>GPU</th><th class="n">VRAM</th><th class="n">BW GB/s</th><th class="n">TDP</th><th class="n" data-i18n="th.need"></th><th class="n" data-i18n="th.used"></th><th class="n">tok/s</th><th data-i18n="th.status"></th></tr></thead>
+    <tbody id="fitBody"></tbody>
+  </table></div>
+</section>
+
+<section class="panel quote" aria-label="Quote request" id="quote">
+  <h2 data-i18n="h.quote"></h2>
+  <p class="hint" style="margin:-6px 0 12px" data-i18n="q.intro"></p>
+  <div class="qgrid">
+    <form id="qform" novalidate>
+      <div class="row">
+        <div class="field"><label for="qType" data-i18n="q.type"></label><select id="qType">
+          <option data-i18n="o.ws"></option><option data-i18n="o.rack"></option><option>NVIDIA DGX / HGX</option><option data-i18n="o.mini"></option><option data-i18n="o.unsure"></option></select></div>
+        <div class="field"><label for="qCpu">CPU platform</label><select id="qCpu">
+          <option>Intel Xeon (W / Scalable)</option><option>AMD Ryzen Threadripper PRO</option><option>AMD EPYC</option><option>Intel Core (i9 / Ultra)</option><option>AMD Ryzen 9</option><option data-i18n="o.rec"></option></select></div>
+      </div>
+      <div class="row3">
+        <div class="field"><label for="qCores">Cores</label><input id="qCores" type="number" min="4" step="2" placeholder="32"></div>
+        <div class="field"><label for="qClock">Clock (GHz)</label><input id="qClock" type="number" min="1" step="0.1" placeholder="3.5"></div>
+        <div class="field"><label for="qRam">RAM (GB)</label><input id="qRam" type="number" min="16" step="16" placeholder="256"></div>
+      </div>
+      <div class="row3">
+        <div class="field"><label for="qDisk">Storage (TB)</label><input id="qDisk" type="number" min="0.5" step="0.5" placeholder="4"></div>
+        <div class="field"><label for="qDiskT" data-i18n="q.diskT"></label><select id="qDiskT"><option>NVMe SSD</option><option>SATA SSD</option><option>NVMe + HDD</option><option data-i18n="o.rec2"></option></select></div>
+        <div class="field"><label for="qQty" data-i18n="q.qty"></label><input id="qQty" type="number" min="1" value="1"></div>
+      </div>
+      <div class="field"><label for="qGpu" data-i18n="q.gpu"></label><input id="qGpu" type="text"></div>
+      <div class="row">
+        <div class="field"><label for="qName" data-i18n="q.name"></label><input id="qName" type="text" autocomplete="organization"></div>
+        <div class="field"><label for="qContact" data-i18n="q.contact"></label><input id="qContact" type="text" autocomplete="email"></div>
+      </div>
+      <div class="field"><label for="qNote" data-i18n="q.note"></label><textarea id="qNote" rows="2" style="font-family:var(--font);font-size:14px"></textarea></div>
+      <button type="submit" class="btn" data-i18n="q.build"></button>
+      <div class="promise" data-i18n="q.promise"></div>
+    </form>
+    <div>
+      <div class="qsum">
+        <label for="qText" class="hint" style="display:block;margin-bottom:6px" data-i18n="q.msg"></label>
+        <textarea id="qText" rows="15"></textarea>
+        <div class="btns">
+          <button type="button" class="btn" id="copyBtn" data-i18n="q.copy"></button>
+          <a class="btn sec" id="mailBtn" href="#" target="_blank" rel="noopener" data-i18n="q.mail"></a>
+        </div>
+        <div class="toast" id="toast"></div>
+      </div>
+      <div class="contact">
+        <div class="qr" id="qr" aria-label="QR code LINE @462lkloe"></div>
+        <div class="txt">
+          <div data-i18n="q.scan"></div>
+          <div>LINE ID <b>@462lkloe</b></div>
+          <div><span data-i18n="q.email"></span> <b>sales@klmogroup.com</b></div>
+          <div><span data-i18n="q.tel"></span> <b>095-431-8124</b></div>
+          <div class="hint" style="margin-top:4px" data-i18n="q.fallback"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="panel faq" aria-label="FAQ" style="margin-top:18px">
+  <h2 data-i18n="h.faq"></h2>
+  <div class="faqs" id="faqs"></div>
+</section>
+
+<footer><strong data-i18n="f.title"></strong> <span data-i18n="f.body"></span></footer>
+</div>
+
+<script>
+// ---------- i18n ----------
+const I18N={th:{
+ sub:'ประเมิน VRAM และความเร็วสำหรับรันหรือเทรน LLM บน workstation / server · KL-iT ONLINE',tag:'Prototype v0.3 · estimate only',
+ freeTitle:'เปิดให้ใช้ฟรี',freeBody:'เครื่องมือนี้ KL-iT ONLINE เปิดให้ทุกท่านใช้งานฟรี เพื่อร่วมกันพัฒนา AI ในประเทศไทย — ท่านสามารถร่วมส่งเสริม LLM Sizing Calculator ให้พัฒนาต่อไปได้ด้วยการสนับสนุนสินค้าจาก',
+ 'h.model':'1 · โมเดล','l.model':'เลือกโมเดล','l.custom':'กำหนดสเปกโมเดลเอง (custom)','h.customHint':'ค่าเหล่านี้อยู่ใน config.json ของโมเดลบน Hugging Face (num_hidden_layers, num_key_value_heads, head_dim)',
+ 'l.users':'ผู้ใช้พร้อมกัน (concurrent)','h.users':'แต่ละคนถือ context เต็มตามค่าด้านบน','l.prompt':'Prompt ที่ใช้วัด TTFT',
+ 'l.ftm':'วิธีเทรน','l.bs':'Micro-batch ต่อ GPU','l.gck':'Gradient checkpointing (ลด activation ~5–8×)','l.opt8':'8-bit AdamW (Full FT: ลด optimizer state 4×)','l.ds':'ขนาด dataset (ล้าน tokens) — ประเมินเวลาต่อ epoch',
+ 'h.hw':'2 · ฮาร์ดแวร์','l.ngpu':'จำนวน GPU','l.offload':'อนุญาต offload ส่วนที่เกินไป RAM (ช้าลงมาก)',
+ ngpuInf:'tensor parallel แบ่งโมเดลข้ามการ์ด',ngpuFt:'FSDP / ZeRO-3 แบ่ง weights + optimizer ข้ามการ์ด',
+ resInf:'ผลประเมิน · Inference',resFt:'ผลประเมิน · Fine-tuning','th.item':'รายการ','th.basis':'ที่มา',
+ 'h.fit':'GPU ทั้ง catalog กับ config นี้','th.need':'ต้องใช้','th.used':'ใช้ VRAM','th.status':'สถานะ',
+ fitInf:'คอลัมน์ "ต้องใช้" = จำนวนการ์ดขั้นต่ำ (tensor parallel สูงสุด 8) · ความเร็วคิดที่จำนวนการ์ดนั้น · ใช้ VRAM = รวมทุกการ์ด',fitFt:'คอลัมน์ "ต้องใช้" = จำนวนการ์ดขั้นต่ำสำหรับ FSDP/ZeRO-3 (สูงสุด 8) · tok/s = training throughput รวม · ใช้ VRAM = ต่อการ์ด',
+ cats:[['all','ทั้งหมด'],['ws','Workstation'],['gf','GeForce'],['dc','Datacenter'],['ot','Unified / อื่นๆ']],
+ catName:{ws:'Workstation (NVIDIA RTX PRO / Ada / A-series)',gf:'GeForce',dc:'Datacenter',ot:'Unified memory / AMD / Intel / Apple'},
+ grpTyphoon:'Typhoon (SCB 10X · ไทย)',grpOther:'อื่นๆ',customModel:'Custom (กำหนดเอง)',customGpu:'Custom GPU (ระบุเอง)',
+ ok:'✓ รันได้ มี headroom',tight:'✓ รันได้ แต่ชิดเพดาน',offl:g=>`⚠ ต้อง offload ${g} GB`,bad:(g,ft)=>`✗ VRAM ไม่พอ ขาด ${g} GB${ft?' ต่อการ์ด':''}`,
+ perCard:'ต่อการ์ด',need:'ที่ต้องใช้',capFt:(c,u)=>`ใช้ได้ ${c} GB ต่อการ์ด (${u}% usable)`,capInf:(c,t,u)=>`ใช้ได้ ${c} GB จาก ${t} GB (${u}% usable)`,total:'รวม',
+ user:'user',users:'users',on:'บน',
+ k:{tpsUser:'ความเร็วต่อผู้ใช้',tpsAll:'รวมทุกผู้ใช้',ttft:'Time to first token',ttftFull:'TTFT ที่ context เต็ม',kvTok:'KV ต่อ token',maxCtx:'Context สูงสุดที่ใส่ได้',
+    thr:'Training throughput',epoch:'เวลาต่อ epoch',step:'เวลาต่อ step',train:'Trainable params',frac:'สัดส่วน trainable',maxBs:'Batch สูงสุด/GPU'},
+ min:'นาที',hr:'ชม.',tokUser:'tok/user',
+ p:{w:'Model weights',kv:'KV cache',act:'Activations / logits',rt:'Runtime (CUDA, NCCL)',base:'Base weights',states:'Gradients + optimizer',actFt:'Activations',logits:'Logits (fp32 + grad)',sharded:n=>` (แบ่ง ÷${n})`,
+    wB:(p,b)=>`${p}B × ${b} B/param`,kvB:(k,c,u,s)=>`${k} KB/token × ${c} × ${u}${s?' (sliding-window ลดส่วน local)':''}`,actB:'~7% ของ active weights + logits',rtB:(n,m)=>`${n} GPU × ${m} GB${n>1?' + NCCL':''}`,
+    nf4:p=>`${p}B × 0.56 B/param (NF4)`,bf16:p=>`${p}B × 2 B/param (BF16)`,full:(b,p)=>`${b} B/param × ${p}B`,lora:t=>`${t}M trainable × 14 B`,
+    actFtB:(s,b,L,g,f)=>`seq ${s} × batch ${b} × ${L} layers${g?' · checkpointed':''}${f?'':' · eager attention'}`,logB:(t,v)=>`${t} tokens × ${v} vocab × 8 B`},
+ lg:{w:'Weights',kv:'KV cache',o:'Runtime / อื่นๆ',states:'Gradients + optimizer',act:'Activations'},
+ sInf:{offl:'offload ไป RAM ทำให้ส่วนที่เกินวิ่งผ่าน PCIe/DDR (~45 GB/s) ความเร็วตกหลายเท่า เหมาะกับงาน batch ไม่เหมาะ chat',comp:'ที่จำนวนผู้ใช้นี้ GPU ติด compute (prefill/batch) มากกว่า bandwidth',mem:'ความเร็ว decode ถูกจำกัดด้วย memory bandwidth — การ์ดที่ bandwidth สูงกว่าจะเร็วกว่าแม้ VRAM เท่ากัน',moe:' · MoE: VRAM ต้องถือ expert ทั้งหมด แต่ความเร็วคิดจาก active params'},
+ sFt:{mfu:m=>`ประเมินที่ MFU ${m}% `,qlora:'(QLoRA เสีย compute ให้การ dequantize)',lora:'(LoRA ไม่ต้องคำนวณ weight-gradient ของ base)',full:'(full FT ใช้ GPU ได้เต็มที่สุด)',gck:' · gradient checkpointing เพิ่ม compute ~33% แต่ลด VRAM มาก',multi:' · multi-GPU ใช้ FSDP/ZeRO-3 แบ่ง states ข้ามการ์ด (ควรมี NVLink หรือ PCIe 5.0 x16)',moe:' · MoE: trainable คิดจาก hidden size โดยประมาณ'},
+ opt:'ตัวเลือก: ',use:(n,g)=>`ใช้ ${n}× ${g}`,orQuant:q=>` หรือลด quantization เป็น ${q}`,orCtx:c=>` หรือลด context เหลือ ≤ ${c} tokens`,
+ ftUse:(n,g)=>`ใช้ ${n}× ${g} (FSDP)`,toLora:'เปลี่ยนเป็น LoRA',toQlora:'เปลี่ยนเป็น QLoRA',onGck:'เปิด gradient checkpointing',bs1:'ลด micro-batch เป็น 1 แล้วใช้ gradient accumulation',halfSeq:s=>`ลด sequence เป็น ${s}`,noFit:'โมเดลใหญ่เกินการ์ดนี้แม้ QLoRA — ต้องขยับไปการ์ด VRAM ใหญ่กว่า หรือหลายการ์ด',
+ tightNote:ft=>'ชิดเพดาน VRAM — เผื่อ 15% สำหรับ fragmentation/driver แนะนำ'+(ft?'ลด batch หรือเปิด checkpointing':'ลด context หรือขยับไปการ์ดใหญ่กว่า'),
+ stNo:'ไม่พอ (>8 การ์ด)',stTight:'ชิดเพดาน',stOk:'รันได้',stN:n=>`ต้อง ${n} การ์ด`,
+ 'h.quote':'ขอใบเสนอราคาเครื่องสำหรับ config นี้','q.intro':'กรอกคร่าวๆ พอครับ ทีมเทคนิค KL-iT ONLINE จะจัดสเปกเต็มและราคาส่งกลับให้',
+ 'q.type':'ประเภทเครื่อง','o.ws':'Workstation (ตั้งโต๊ะ)','o.rack':'Rack server','o.mini':'Mini / Edge (DGX Spark, Ryzen AI)','o.unsure':'ยังไม่แน่ใจ ให้แนะนำ','o.rec':'ตามที่แนะนำ','o.rec2':'ตามที่แนะนำ',
+ 'q.diskT':'ชนิด','q.qty':'จำนวนเครื่อง','q.gpu':'GPU (ดึงจากผลประเมินด้านบน แก้ได้)','q.name':'ชื่อ / บริษัท','q.contact':'อีเมลหรือเบอร์ติดต่อกลับ','q.note':'ความต้องการเพิ่มเติม / งบประมาณ (ถ้ามี)',
+ 'q.build':'สร้างข้อความขอใบเสนอราคา','q.promise':'เมื่อได้รับข้อความ ทีมเทคนิค kl-itonline จะรีบติดต่อกลับท่านโดยเร็วที่สุด เพื่อจัดสเปกให้ตรงกับงานของท่าน',
+ 'q.msg':'ข้อความที่จะส่ง (แก้ได้ก่อนส่ง)','q.copy':'คัดลอกข้อความ','q.mail':'เปิดโปรแกรมอีเมล','q.scan':'สแกนเพิ่มเพื่อน LINE แล้ววางข้อความ หรือส่งอีเมลมาที่','q.email':'อีเมล','q.tel':'โทร','q.fallback':'ถ้าปุ่มอีเมลไม่เปิด ให้กดคัดลอกแล้ววางในอีเมลของท่านเองได้ครับ',
+ built:'สร้างข้อความแล้ว — กดคัดลอก หรือเปิดอีเมลด้านล่าง',copied:e=>'คัดลอกแล้ว — วางใน LINE หรืออีเมลถึง '+e,selected:'เลือกข้อความให้แล้ว กด Ctrl+C / ⌘C เพื่อคัดลอก',
+ m:{title:'ขอใบเสนอราคาเครื่องสำหรับงาน AI / LLM (จาก KL-iT LLM Sizing Calculator)',name:'ชื่อ/บริษัท',contact:'ติดต่อกลับ',spec:'--- สเปกที่ต้องการ ---',type:'ประเภทเครื่อง',cpu:'CPU',cores:'cores',ram:'RAM',rec:'ตามที่แนะนำ',disk:'Storage',gpu:'GPU',note:'เพิ่มเติม',res:'--- ผลประเมินจากเครื่องคำนวณ ---',mode:'โหมด',cfg:'Config',vram:'VRAM ที่ต้องใช้',usable:'ใช้ได้',fits:'พอ',short:g=>`ไม่พอ ขาด ${g} GB`,speed:'ความเร็วประเมิน',perUser:'tok/s ต่อผู้ใช้',training:'tok/s training',subj:n=>'ขอใบเสนอราคาเครื่อง AI/LLM — '+(n||'ลูกค้าใหม่')},
+ 'h.faq':'คำถามที่พบบ่อย · การเลือก GPU สำหรับ LLM',
+ faq:[
+  ['รัน LLM ต้องใช้ VRAM เท่าไร?','คิดคร่าวๆ: น้ำหนักโมเดล = จำนวน parameter × ขนาดต่อ parameter (FP16 = 2 bytes, Q4 ≈ 0.6 bytes) บวก KV cache ที่โตตาม context และจำนวนผู้ใช้ บวก overhead ของ runtime ราว 1–2 GB เช่น Llama 3.1 8B Q4 ที่ 8K context ใช้ราว 7 GB ส่วน 70B Q4 ใช้ราว 45–50 GB'],
+  ['การ์ดจอรุ่นไหนรัน Llama 70B ได้?','ที่ Q4 ต้องมี VRAM 48 GB ขึ้นไป: RTX PRO 6000 Blackwell (96 GB) ใบเดียวสบาย, RTX PRO 5000 48 GB หรือ RTX 6000 Ada ใบเดียวแบบชิดเพดาน, หรือ GeForce RTX 5090/4090 สองใบ ถ้าต้องการ FP16 เต็ม ต้อง 2× H100/H200 หรือ 2× RTX PRO 6000'],
+  ['RTX PRO 6000 ต่างจาก RTX 5090 อย่างไรสำหรับงาน AI?','ชิปใกล้กัน (Blackwell) และ memory bandwidth เท่ากัน แต่ PRO 6000 มี VRAM 96 GB (5090 มี 32 GB) จึงรันโมเดล 70B ใบเดียวได้, มี ECC, driver สำหรับ workstation, ระบายความร้อนแบบ blower ใส่หลายใบในเคสเดียวได้ และรองรับการใช้งานต่อเนื่อง 24×7 เหมาะกับองค์กร ส่วน 5090 คุ้มสำหรับโมเดล ≤ 32B'],
+  ['Workstation กับ Server เลือกอะไรดี?','Workstation (HP Z, Dell Precision, Lenovo P) เหมาะกับ 1–4 GPU, ตั้งในออฟฟิศ, เงียบ, ราคาถูกกว่า ใช้สำหรับทีมพัฒนา/ทดลอง/บริการผู้ใช้ไม่เกินสิบคน Server (rack) เหมาะเมื่อต้อง 4–8 GPU, ให้บริการหลายสิบคนพร้อมกัน, ต้องการ redundancy และวางใน data center'],
+  ['Fine-tune โมเดลต้องใช้ VRAM มากกว่ารันเท่าไร?','Full fine-tune ใช้ราว 16 bytes ต่อ parameter (น้ำหนัก + gradient + optimizer) คือมากกว่ารัน FP16 ราว 8 เท่า — 8B ต้อง ~130 GB LoRA ลดเหลือน้ำหนัก FP16 + activations (8B ≈ 18–22 GB) QLoRA ลดอีกเป็น ~8–12 GB จึงเทรน 8B บนการ์ด 24 GB ได้ และ 70B QLoRA บนการ์ด 48–80 GB ใบเดียว'],
+  ['ตัวเลขจากเครื่องคำนวณนี้แม่นแค่ไหน?','VRAM โดยทั่วไปคลาดเคลื่อน ±10% ส่วนความเร็ว tok/s คลาดเคลื่อนได้ 15–25% ตาม runtime (vLLM เร็วกว่า llama.cpp), driver และเวอร์ชันโมเดล ใช้เป็นจุดเริ่มต้นจัดสเปก แล้วเผื่อ VRAM 15% — ทีม KL-iT ทดสอบบนเครื่องจริงก่อนส่งมอบทุกครั้ง'],
+ ],
+ 'f.title':'หมายเหตุ','f.body':'ตัวเลขทั้งหมดเป็นค่าประมาณจากสูตรสาธารณะ (weights = params × bytes/param · KV = 2 × layers × KV-heads × head-dim × tokens · fine-tune = weights + gradients + optimizer states + activations · decode ≈ memory-bandwidth bound · training ≈ 6 × params FLOPs/token ที่ MFU 25–40%) ค่าที่วัดจริงต่างได้ 10–25% ตาม runtime, driver และเวอร์ชันโมเดล — สำหรับงาน sizing จริง KL-iT แนะนำเผื่อ VRAM อย่างน้อย 15% และทดสอบบน hardware จริงก่อนส่งมอบ · GB = 10⁹ bytes · สเปก GPU อ้างอิง datasheet ผู้ผลิต, สเปกโมเดลอ้างอิง config.json ของแต่ละโมเดล',
+},en:{
+ sub:'Estimate VRAM and speed for running or training LLMs on workstations and servers · KL-iT ONLINE',tag:'Prototype v0.3 · estimate only',
+ freeTitle:'Free to use.',freeBody:'KL-iT ONLINE offers this tool free of charge to help advance AI together. You can support the continued development of the LLM Sizing Calculator by purchasing your hardware from',
+ 'h.model':'1 · Model','l.model':'Select model','l.custom':'Enter model specs manually (custom)','h.customHint':'These values are in the model\'s config.json on Hugging Face (num_hidden_layers, num_key_value_heads, head_dim)',
+ 'l.users':'Concurrent users','h.users':'Each user holds the full context above','l.prompt':'Prompt length for TTFT',
+ 'l.ftm':'Method','l.bs':'Micro-batch per GPU','l.gck':'Gradient checkpointing (cuts activations ~5–8×)','l.opt8':'8-bit AdamW (Full FT: optimizer state ÷4)','l.ds':'Dataset size (million tokens) — for time per epoch',
+ 'h.hw':'2 · Hardware','l.ngpu':'Number of GPUs','l.offload':'Allow offloading the excess to RAM (much slower)',
+ ngpuInf:'tensor parallel splits the model across cards',ngpuFt:'FSDP / ZeRO-3 shards weights + optimizer across cards',
+ resInf:'Estimate · Inference',resFt:'Estimate · Fine-tuning','th.item':'Item','th.basis':'Basis',
+ 'h.fit':'Whole GPU catalog vs this config','th.need':'Cards','th.used':'VRAM used','th.status':'Status',
+ fitInf:'"Cards" = minimum GPUs needed (tensor parallel up to 8) · speed at that count · VRAM used = all cards combined',fitFt:'"Cards" = minimum GPUs for FSDP/ZeRO-3 (up to 8) · tok/s = total training throughput · VRAM used = per card',
+ cats:[['all','All'],['ws','Workstation'],['gf','GeForce'],['dc','Datacenter'],['ot','Unified / other']],
+ catName:{ws:'Workstation (NVIDIA RTX PRO / Ada / A-series)',gf:'GeForce',dc:'Datacenter',ot:'Unified memory / AMD / Intel / Apple'},
+ grpTyphoon:'Typhoon (SCB 10X · Thai)',grpOther:'Other',customModel:'Custom (enter specs)',customGpu:'Custom GPU (enter specs)',
+ ok:'✓ Fits with headroom',tight:'✓ Fits, but tight',offl:g=>`⚠ Needs ${g} GB offloaded`,bad:(g,ft)=>`✗ Not enough VRAM, short ${g} GB${ft?' per card':''}`,
+ perCard:'per card',need:'required',capFt:(c,u)=>`${c} GB usable per card (${u}% usable)`,capInf:(c,t,u)=>`${c} GB usable of ${t} GB (${u}% usable)`,total:'Total',
+ user:'user',users:'users',on:'on',
+ k:{tpsUser:'Speed per user',tpsAll:'All users combined',ttft:'Time to first token',ttftFull:'TTFT at full context',kvTok:'KV per token',maxCtx:'Max context that fits',
+    thr:'Training throughput',epoch:'Time per epoch',step:'Time per step',train:'Trainable params',frac:'Trainable share',maxBs:'Max batch / GPU'},
+ min:'min',hr:'h',tokUser:'tok/user',
+ p:{w:'Model weights',kv:'KV cache',act:'Activations / logits',rt:'Runtime (CUDA, NCCL)',base:'Base weights',states:'Gradients + optimizer',actFt:'Activations',logits:'Logits (fp32 + grad)',sharded:n=>` (sharded ÷${n})`,
+    wB:(p,b)=>`${p}B × ${b} B/param`,kvB:(k,c,u,s)=>`${k} KB/token × ${c} × ${u}${s?' (sliding-window reduces local layers)':''}`,actB:'~7% of active weights + logits',rtB:(n,m)=>`${n} GPU × ${m} GB${n>1?' + NCCL':''}`,
+    nf4:p=>`${p}B × 0.56 B/param (NF4)`,bf16:p=>`${p}B × 2 B/param (BF16)`,full:(b,p)=>`${b} B/param × ${p}B`,lora:t=>`${t}M trainable × 14 B`,
+    actFtB:(s,b,L,g,f)=>`seq ${s} × batch ${b} × ${L} layers${g?' · checkpointed':''}${f?'':' · eager attention'}`,logB:(t,v)=>`${t} tokens × ${v} vocab × 8 B`},
+ lg:{w:'Weights',kv:'KV cache',o:'Runtime / other',states:'Gradients + optimizer',act:'Activations'},
+ sInf:{offl:'Offloading pushes the excess through PCIe/DDR (~45 GB/s): several times slower, fine for batch jobs, not for chat',comp:'At this user count the GPU is compute-bound (prefill/batch) rather than bandwidth-bound',mem:'Decode speed is memory-bandwidth bound — a card with higher bandwidth is faster even at equal VRAM',moe:' · MoE: VRAM must hold all experts, speed follows active params'},
+ sFt:{mfu:m=>`Estimated at ${m}% MFU `,qlora:'(QLoRA spends compute on dequantization)',lora:'(LoRA skips weight-gradients for the base model)',full:'(full FT uses the GPU most fully)',gck:' · gradient checkpointing adds ~33% compute but saves a lot of VRAM',multi:' · multi-GPU uses FSDP/ZeRO-3 to shard states (NVLink or PCIe 5.0 x16 recommended)',moe:' · MoE: trainable count uses an approximate hidden size'},
+ opt:'Options: ',use:(n,g)=>`use ${n}× ${g}`,orQuant:q=>`, or drop quantization to ${q}`,orCtx:c=>`, or reduce context to ≤ ${c} tokens`,
+ ftUse:(n,g)=>`use ${n}× ${g} (FSDP)`,toLora:'switch to LoRA',toQlora:'switch to QLoRA',onGck:'enable gradient checkpointing',bs1:'micro-batch 1 with gradient accumulation',halfSeq:s=>`reduce sequence to ${s}`,noFit:'Model too large for this card even with QLoRA — move to a larger-VRAM card or multiple cards',
+ tightNote:ft=>'Close to the VRAM ceiling — keep 15% for fragmentation/driver; '+(ft?'reduce batch or enable checkpointing':'reduce context or step up to a larger card'),
+ stNo:'No fit (>8 cards)',stTight:'Tight',stOk:'Fits',stN:n=>`Needs ${n} cards`,
+ 'h.quote':'Request a quote for this configuration','q.intro':'A rough spec is enough. The KL-iT ONLINE technical team will complete the specification and send pricing back to you.',
+ 'q.type':'System type','o.ws':'Workstation (desktop)','o.rack':'Rack server','o.mini':'Mini / Edge (DGX Spark, Ryzen AI)','o.unsure':'Not sure, please advise','o.rec':'As recommended','o.rec2':'As recommended',
+ 'q.diskT':'Type','q.qty':'Quantity','q.gpu':'GPU (from the estimate above, editable)','q.name':'Name / company','q.contact':'Email or phone for reply','q.note':'Additional requirements / budget (optional)',
+ 'q.build':'Generate quote request','q.promise':'Once we receive your message, the kl-itonline technical team will contact you as soon as possible to finalize a specification that fits your workload.',
+ 'q.msg':'Message to send (editable)','q.copy':'Copy message','q.mail':'Open email app','q.scan':'Scan to add us on LINE and paste the message, or email us at','q.email':'Email','q.tel':'Tel','q.fallback':'If the email button does nothing, copy the message and paste it into your own email client.',
+ built:'Message ready — copy it or open your email app below',copied:e=>'Copied — paste into LINE or an email to '+e,selected:'Text selected — press Ctrl+C / ⌘C to copy',
+ m:{title:'Quote request for an AI / LLM system (from KL-iT LLM Sizing Calculator)',name:'Name/company',contact:'Reply to',spec:'--- Requested spec ---',type:'System type',cpu:'CPU',cores:'cores',ram:'RAM',rec:'as recommended',disk:'Storage',gpu:'GPU',note:'Notes',res:'--- Calculator estimate ---',mode:'Mode',cfg:'Config',vram:'VRAM required',usable:'usable',fits:'fits',short:g=>`short by ${g} GB`,speed:'Estimated speed',perUser:'tok/s per user',training:'tok/s training',subj:n=>'Quote request: AI/LLM system — '+(n||'new customer')},
+ 'h.faq':'FAQ · choosing a GPU for LLMs',
+ faq:[
+  ['How much VRAM does an LLM need?','Rule of thumb: model weights = parameter count × bytes per parameter (FP16 = 2 bytes, Q4 ≈ 0.6 bytes), plus KV cache that grows with context and user count, plus 1–2 GB of runtime overhead. Llama 3.1 8B at Q4 with 8K context needs about 7 GB; a 70B model at Q4 needs 45–50 GB.'],
+  ['Which GPU can run Llama 70B?','At Q4 you need 48 GB or more: an RTX PRO 6000 Blackwell (96 GB) runs it comfortably on one card, an RTX PRO 5000 48 GB or RTX 6000 Ada fits tightly, or use two GeForce RTX 5090/4090. Full FP16 needs 2× H100/H200 or 2× RTX PRO 6000.'],
+  ['RTX PRO 6000 vs RTX 5090 for AI work?','Similar Blackwell silicon and the same memory bandwidth, but the PRO 6000 has 96 GB (the 5090 has 32 GB), so it runs 70B models on one card; it also adds ECC, workstation drivers, a blower cooler for multi-GPU builds and 24×7 duty rating. The 5090 is the value pick for models up to ~32B.'],
+  ['Workstation or server?','A workstation (HP Z, Dell Precision, Lenovo P) suits 1–4 GPUs, sits in the office, runs quietly and costs less: ideal for development, experiments and serving a small team. A rack server makes sense at 4–8 GPUs, dozens of concurrent users, redundancy requirements and data-center placement.'],
+  ['How much more VRAM does fine-tuning need?','Full fine-tuning uses about 16 bytes per parameter (weights + gradients + optimizer), roughly 8× FP16 inference: an 8B model needs ~130 GB. LoRA drops that to FP16 weights + activations (8B ≈ 18–22 GB). QLoRA goes further to ~8–12 GB, so an 8B model trains on a 24 GB card and a 70B QLoRA fits a single 48–80 GB card.'],
+  ['How accurate is this calculator?','VRAM is usually within ±10%; tok/s can vary 15–25% with the runtime (vLLM is faster than llama.cpp), driver and model version. Use it as a starting point for the spec and keep 15% VRAM headroom. KL-iT tests every build on the actual hardware before delivery.'],
+ ],
+ 'f.title':'Note','f.body':'All figures are estimates from public formulas (weights = params × bytes/param · KV = 2 × layers × KV-heads × head-dim × tokens · fine-tune = weights + gradients + optimizer states + activations · decode ≈ memory-bandwidth bound · training ≈ 6 × params FLOPs/token at 25–40% MFU). Measured values can differ by 10–25% depending on runtime, driver and model version. For real sizing KL-iT recommends at least 15% VRAM headroom and a test on the actual hardware before delivery · GB = 10⁹ bytes · GPU specs from vendor datasheets, model specs from each model\'s config.json',
+}};
+let lang='th';
+const t=k=>{const v=I18N[lang][k];return v===undefined?I18N.th[k]:v};
+
+// ---------- catalogs ----------
+const GPUS=[
+ {id:'pro6000',n:'RTX PRO 6000 Blackwell',c:'ws',v:96,bw:1792,tf:126,tdp:600,note:{th:'Workstation / Max-Q 300 W / Server edition ใช้สเปก VRAM เดียวกัน',en:'Workstation / Max-Q 300 W / Server edition share the same VRAM spec'}},
+ {id:'pro5000_72',n:'RTX PRO 5000 Blackwell 72GB',c:'ws',v:72,bw:1344,tf:84,tdp:300},
+ {id:'pro5000',n:'RTX PRO 5000 Blackwell 48GB',c:'ws',v:48,bw:1344,tf:84,tdp:300},
+ {id:'pro4500',n:'RTX PRO 4500 Blackwell',c:'ws',v:32,bw:896,tf:56,tdp:200},
+ {id:'pro4000',n:'RTX PRO 4000 Blackwell',c:'ws',v:24,bw:672,tf:45,tdp:140},
+ {id:'pro4000sff',n:'RTX PRO 4000 Blackwell SFF',c:'ws',v:24,bw:432,tf:30,tdp:70},
+ {id:'pro2000',n:'RTX PRO 2000 Blackwell',c:'ws',v:16,bw:288,tf:23,tdp:70},
+ {id:'6000ada',n:'RTX 6000 Ada',c:'ws',v:48,bw:960,tf:91,tdp:300},
+ {id:'5000ada',n:'RTX 5000 Ada',c:'ws',v:32,bw:576,tf:65,tdp:250},
+ {id:'4500ada',n:'RTX 4500 Ada',c:'ws',v:24,bw:432,tf:40,tdp:210},
+ {id:'4000ada',n:'RTX 4000 Ada',c:'ws',v:20,bw:360,tf:27,tdp:130},
+ {id:'4000sff',n:'RTX 4000 SFF Ada',c:'ws',v:20,bw:280,tf:19,tdp:70},
+ {id:'2000ada',n:'RTX 2000 Ada',c:'ws',v:16,bw:224,tf:12,tdp:70},
+ {id:'a6000',n:'RTX A6000',c:'ws',v:48,bw:768,tf:39,tdp:300},
+ {id:'a5000',n:'RTX A5000',c:'ws',v:24,bw:768,tf:28,tdp:230},
+ {id:'a4500',n:'RTX A4500',c:'ws',v:20,bw:640,tf:24,tdp:200},
+ {id:'a4000',n:'RTX A4000',c:'ws',v:16,bw:448,tf:19,tdp:140},
+ {id:'a2000',n:'RTX A2000 12GB',c:'ws',v:12,bw:288,tf:8,tdp:70},
+ {id:'5090',n:'GeForce RTX 5090',c:'gf',v:32,bw:1792,tf:105,tdp:575},
+ {id:'5080',n:'GeForce RTX 5080',c:'gf',v:16,bw:960,tf:56,tdp:360},
+ {id:'5070ti',n:'GeForce RTX 5070 Ti',c:'gf',v:16,bw:896,tf:44,tdp:300},
+ {id:'5070',n:'GeForce RTX 5070',c:'gf',v:12,bw:672,tf:31,tdp:250},
+ {id:'5060ti16',n:'GeForce RTX 5060 Ti 16GB',c:'gf',v:16,bw:448,tf:24,tdp:180},
+ {id:'5060',n:'GeForce RTX 5060 8GB',c:'gf',v:8,bw:448,tf:19,tdp:145},
+ {id:'4090',n:'GeForce RTX 4090',c:'gf',v:24,bw:1008,tf:83,tdp:450},
+ {id:'4080s',n:'GeForce RTX 4080 Super',c:'gf',v:16,bw:736,tf:52,tdp:320},
+ {id:'4070tis',n:'GeForce RTX 4070 Ti Super',c:'gf',v:16,bw:672,tf:44,tdp:285},
+ {id:'4070s',n:'GeForce RTX 4070 Super',c:'gf',v:12,bw:504,tf:36,tdp:220},
+ {id:'4060ti16',n:'GeForce RTX 4060 Ti 16GB',c:'gf',v:16,bw:288,tf:22,tdp:165},
+ {id:'3090',n:'GeForce RTX 3090',c:'gf',v:24,bw:936,tf:36,tdp:350},
+ {id:'3060',n:'GeForce RTX 3060 12GB',c:'gf',v:12,bw:360,tf:13,tdp:170},
+ {id:'b300',n:'B300 SXM 288GB',c:'dc',v:288,bw:8000,tf:2250,tdp:1400},
+ {id:'b200',n:'B200 SXM 192GB',c:'dc',v:192,bw:8000,tf:2250,tdp:1000},
+ {id:'h200',n:'H200 SXM 141GB',c:'dc',v:141,bw:4800,tf:990,tdp:700},
+ {id:'h200nvl',n:'H200 NVL 141GB (PCIe)',c:'dc',v:141,bw:4800,tf:835,tdp:600},
+ {id:'h100sxm',n:'H100 SXM 80GB',c:'dc',v:80,bw:3350,tf:990,tdp:700},
+ {id:'h100pcie',n:'H100 PCIe 80GB',c:'dc',v:80,bw:2000,tf:756,tdp:350},
+ {id:'h100nvl',n:'H100 NVL 94GB',c:'dc',v:94,bw:3900,tf:835,tdp:400},
+ {id:'h20',n:'H20 96GB',c:'dc',v:96,bw:4000,tf:148,tdp:400},
+ {id:'a100_80',n:'A100 80GB',c:'dc',v:80,bw:2039,tf:312,tdp:400},
+ {id:'a100_40',n:'A100 40GB',c:'dc',v:40,bw:1555,tf:312,tdp:400},
+ {id:'l40s',n:'L40S 48GB',c:'dc',v:48,bw:864,tf:362,tdp:350},
+ {id:'l40',n:'L40 48GB',c:'dc',v:48,bw:864,tf:181,tdp:300},
+ {id:'l4',n:'L4 24GB',c:'dc',v:24,bw:300,tf:121,tdp:72},
+ {id:'a10',n:'A10 24GB',c:'dc',v:24,bw:600,tf:125,tdp:150},
+ {id:'a2',n:'A2 16GB',c:'dc',v:16,bw:200,tf:18,tdp:60},
+ {id:'t4',n:'T4 16GB',c:'dc',v:16,bw:320,tf:65,tdp:70},
+ {id:'spark',n:'NVIDIA DGX Spark (GB10) 128GB',c:'ot',v:128,bw:273,tf:62,tdp:140,note:{th:'unified memory ใช้ได้ ~110 GB สำหรับโมเดล',en:'unified memory, ~110 GB available for the model'}},
+ {id:'strix',n:'AMD Ryzen AI Max+ 395 128GB',c:'ot',v:128,bw:256,tf:30,tdp:120,note:{th:'unified memory จัดสรรให้ GPU ได้ ~96–110 GB',en:'unified memory, ~96–110 GB assignable to the GPU'}},
+ {id:'r9700',n:'AMD Radeon AI PRO R9700 32GB',c:'ot',v:32,bw:640,tf:48,tdp:300},
+ {id:'7900xtx',n:'AMD Radeon RX 7900 XTX',c:'ot',v:24,bw:960,tf:61,tdp:355},
+ {id:'mi300x',n:'AMD Instinct MI300X 192GB',c:'ot',v:192,bw:5300,tf:1307,tdp:750},
+ {id:'mi350x',n:'AMD Instinct MI350X 288GB',c:'ot',v:288,bw:8000,tf:2300,tdp:1000},
+ {id:'b60',n:'Intel Arc Pro B60 24GB',c:'ot',v:24,bw:456,tf:30,tdp:200},
+ {id:'m4max',n:'Apple M4 Max 128GB',c:'ot',v:128,bw:546,tf:17,tdp:90,note:{th:'unified memory ใช้ได้ ~75% สำหรับโมเดล',en:'unified memory, ~75% available for the model'}},
+ {id:'m3ultra',n:'Apple M3 Ultra 512GB',c:'ot',v:512,bw:819,tf:28,tdp:200,note:{th:'unified memory ใช้ได้ ~75% สำหรับโมเดล',en:'unified memory, ~75% available for the model'}},
+ {id:'custom',n:'',c:'ot',v:24,bw:800,tf:60,tdp:0},
+];
+const gpuName=g=>g.id==='custom'?t('customGpu'):g.n;
+
+const MODELS=[
+ {g:'Llama (Meta)',id:'l3.2-1b',n:'Llama 3.2 1B',p:1.24,a:1.24,L:16,kv:8,hd:64},
+ {g:'Llama (Meta)',id:'l3.2-3b',n:'Llama 3.2 3B',p:3.21,a:3.21,L:28,kv:8,hd:128},
+ {g:'Llama (Meta)',id:'l3.1-8b',n:'Llama 3.1 8B',p:8.03,a:8.03,L:32,kv:8,hd:128},
+ {g:'Llama (Meta)',id:'l3.3-70b',n:'Llama 3.3 / 3.1 70B',p:70.6,a:70.6,L:80,kv:8,hd:128},
+ {g:'Llama (Meta)',id:'l3.1-405b',n:'Llama 3.1 405B',p:405,a:405,L:126,kv:8,hd:128},
+ {g:'Llama (Meta)',id:'l4-scout',n:'Llama 4 Scout 109B-A17B (MoE)',p:109,a:17,L:48,kv:8,hd:128},
+ {g:'Llama (Meta)',id:'l4-mav',n:'Llama 4 Maverick 400B-A17B (MoE)',p:400,a:17,L:48,kv:8,hd:128},
+ {g:'grpTyphoon',id:'ty2-8b',n:'Typhoon 2 8B (Llama 3.1 base)',p:8.03,a:8.03,L:32,kv:8,hd:128},
+ {g:'grpTyphoon',id:'ty2-70b',n:'Typhoon 2 70B (Llama 3.1 base)',p:70.6,a:70.6,L:80,kv:8,hd:128},
+ {g:'grpTyphoon',id:'ty2.1-g12',n:'Typhoon 2.1 Gemma3 12B',p:12.2,a:12.2,L:48,kv:8,hd:256,swa:{f:5/6,w:1024}},
+ {g:'Qwen (Alibaba)',id:'q2.5-7b',n:'Qwen2.5 7B',p:7.62,a:7.62,L:28,kv:4,hd:128},
+ {g:'Qwen (Alibaba)',id:'q2.5-14b',n:'Qwen2.5 14B',p:14.8,a:14.8,L:48,kv:8,hd:128},
+ {g:'Qwen (Alibaba)',id:'q2.5-32b',n:'Qwen2.5 32B / Coder 32B',p:32.8,a:32.8,L:64,kv:8,hd:128},
+ {g:'Qwen (Alibaba)',id:'q2.5-72b',n:'Qwen2.5 72B',p:72.7,a:72.7,L:80,kv:8,hd:128},
+ {g:'Qwen (Alibaba)',id:'q3-8b',n:'Qwen3 8B',p:8.2,a:8.2,L:36,kv:8,hd:128},
+ {g:'Qwen (Alibaba)',id:'q3-14b',n:'Qwen3 14B',p:14.8,a:14.8,L:40,kv:8,hd:128},
+ {g:'Qwen (Alibaba)',id:'q3-32b',n:'Qwen3 32B',p:32.8,a:32.8,L:64,kv:8,hd:128},
+ {g:'Qwen (Alibaba)',id:'q3-30a3',n:'Qwen3 30B-A3B (MoE)',p:30.5,a:3.3,L:48,kv:4,hd:128},
+ {g:'Qwen (Alibaba)',id:'q3-235a22',n:'Qwen3 235B-A22B (MoE)',p:235,a:22,L:94,kv:4,hd:128},
+ {g:'Qwen (Alibaba)',id:'q3c-480',n:'Qwen3-Coder 480B-A35B (MoE)',p:480,a:35,L:62,kv:8,hd:128},
+ {g:'DeepSeek',id:'ds-r1',n:'DeepSeek R1 / V3 671B-A37B (MoE, MLA)',p:671,a:37,L:61,kv:1,hd:576,mla:true},
+ {g:'DeepSeek',id:'ds-r1-14',n:'DeepSeek R1 Distill Qwen 14B',p:14.8,a:14.8,L:48,kv:8,hd:128},
+ {g:'DeepSeek',id:'ds-r1-32',n:'DeepSeek R1 Distill Qwen 32B',p:32.8,a:32.8,L:64,kv:8,hd:128},
+ {g:'DeepSeek',id:'ds-r1-70',n:'DeepSeek R1 Distill Llama 70B',p:70.6,a:70.6,L:80,kv:8,hd:128},
+ {g:'OpenAI gpt-oss',id:'oss-20',n:'gpt-oss 20B-A3.6B (MoE, MXFP4)',p:21,a:3.6,L:24,kv:8,hd:64,swa:{f:.5,w:128}},
+ {g:'OpenAI gpt-oss',id:'oss-120',n:'gpt-oss 120B-A5.1B (MoE, MXFP4)',p:117,a:5.1,L:36,kv:8,hd:64,swa:{f:.5,w:128}},
+ {g:'Gemma (Google)',id:'g3-4b',n:'Gemma 3 4B',p:4.3,a:4.3,L:34,kv:4,hd:256,swa:{f:5/6,w:1024}},
+ {g:'Gemma (Google)',id:'g3-12b',n:'Gemma 3 12B',p:12.2,a:12.2,L:48,kv:8,hd:256,swa:{f:5/6,w:1024}},
+ {g:'Gemma (Google)',id:'g3-27b',n:'Gemma 3 27B',p:27.4,a:27.4,L:62,kv:16,hd:128,swa:{f:5/6,w:1024}},
+ {g:'Mistral',id:'mi-7b',n:'Mistral 7B v0.3',p:7.25,a:7.25,L:32,kv:8,hd:128},
+ {g:'Mistral',id:'mi-small24',n:'Mistral Small 3.x 24B',p:24,a:24,L:40,kv:8,hd:128},
+ {g:'Mistral',id:'mix-8x7',n:'Mixtral 8x7B (MoE)',p:46.7,a:12.9,L:32,kv:8,hd:128},
+ {g:'Mistral',id:'mix-8x22',n:'Mixtral 8x22B (MoE)',p:141,a:39,L:56,kv:8,hd:128},
+ {g:'Mistral',id:'mi-large',n:'Mistral Large 2 123B',p:123,a:123,L:88,kv:8,hd:128},
+ {g:'Microsoft Phi',id:'phi4-mini',n:'Phi-4 mini 3.8B',p:3.84,a:3.84,L:32,kv:8,hd:128},
+ {g:'Microsoft Phi',id:'phi4',n:'Phi-4 14B',p:14.7,a:14.7,L:40,kv:10,hd:128},
+ {g:'Cohere',id:'cmd-r',n:'Command R 35B',p:35,a:35,L:40,kv:8,hd:128},
+ {g:'Cohere',id:'cmd-rp',n:'Command R+ 104B',p:104,a:104,L:64,kv:8,hd:128},
+ {g:'grpOther',id:'custom',n:'',p:8,a:8,L:32,kv:8,hd:128},
+];
+const modelName=m=>m.id==='custom'?t('customModel'):m.n;
+const grpName=g=>g.startsWith('grp')?t(g):g;
+
+const QUANTS=[
+ {id:'fp32',n:'FP32',b:4},{id:'fp16',n:'FP16 / BF16',b:2},{id:'fp8',n:'FP8 (E4M3)',b:1.0},{id:'int8',n:'INT8 / Q8_0',b:1.06},
+ {id:'q6k',n:'Q6_K',b:0.82},{id:'q5km',n:'Q5_K_M',b:0.71},{id:'q4km',n:'Q4_K_M',b:0.60},{id:'awq',n:'INT4 AWQ / GPTQ',b:0.56},
+ {id:'nvfp4',n:'NVFP4 / MXFP4',b:0.56},{id:'q3km',n:'Q3_K_M',b:0.49},{id:'q2k',n:'Q2_K',b:0.36},
+];
+const KVQ=[{id:'fp16',n:'FP16',b:2},{id:'fp8',n:'FP8 / INT8',b:1},{id:'q4',n:'Q4',b:0.56}];
+const CTX=[2048,4096,8192,16384,32768,65536,131072];
+const VOCAB=128000;
+
+// ---------- helpers ----------
+const $=id=>document.getElementById(id);
+const GB=1e9, GiB=2**30;
+const fmt=(x,d=1)=>x.toLocaleString('en-US',{maximumFractionDigits:d,minimumFractionDigits:d});
+const fmt0=x=>x.toLocaleString('en-US',{maximumFractionDigits:0});
+const USABLE=0.92;
+let mode='inf', catFilter='all';
+
+function fillSelects(){
+  const ms=$('model'),mv=ms.value||'l3.1-8b';ms.innerHTML='';let g='';
+  MODELS.forEach(m=>{if(m.g!==g){g=m.g;const og=document.createElement('optgroup');og.label=grpName(g);ms.appendChild(og)}const o=document.createElement('option');o.value=m.id;o.textContent=modelName(m);ms.lastElementChild.appendChild(o)});
+  ms.value=mv;
+  const gs=$('gpu'),gv=gs.value||'pro6000';gs.innerHTML='';let c='';
+  GPUS.forEach(x=>{if(x.c!==c){c=x.c;const og=document.createElement('optgroup');og.label=t('catName')[c];gs.appendChild(og)}const o=document.createElement('option');o.value=x.id;o.textContent=`${gpuName(x)} · ${x.v} GB`;gs.lastElementChild.appendChild(o)});
+  gs.value=gv;
+  if(!$('quant').options.length){QUANTS.forEach(q=>$('quant').add(new Option(q.n,q.id)));$('quant').value='q4km';KVQ.forEach(q=>$('kvq').add(new Option(q.n,q.id)));
+    CTX.forEach(v=>{const b=document.createElement('button');b.type='button';b.className='chip';b.textContent=v>=1024?(v/1024)+'K':v;b.dataset.v=v;b.onclick=()=>{$('ctx').value=v;update()};$('ctxChips').appendChild(b)})}
+  $('catChips').innerHTML='';
+  t('cats').forEach(([k,l])=>{const b=document.createElement('button');b.type='button';b.className='chip';b.textContent=l;b.dataset.k=k;b.setAttribute('aria-pressed',k===catFilter);b.onclick=()=>{catFilter=k;[...$('catChips').children].forEach(c=>c.setAttribute('aria-pressed',c.dataset.k===k));renderFit()};$('catChips').appendChild(b)});
+}
+function applyLang(){
+  document.documentElement.lang=lang;
+  $('lTh').setAttribute('aria-pressed',lang==='th');$('lEn').setAttribute('aria-pressed',lang==='en');
+  document.querySelectorAll('[data-i18n]').forEach(el=>{const v=t(el.dataset.i18n);if(typeof v==='string')el.textContent=v});
+  $('faqs').innerHTML=t('faq').map(([q,a])=>`<div><h3>${q}</h3><p>${a}</p></div>`).join('');
+  fillSelects();
+}
+// URL presets: ?gpu=pro6000&model=l3.3-70b&mode=ft&lang=en
+(function(){try{
+  const u=new URLSearchParams(location.search);
+  if(u.get('lang')==='en'||u.get('lang')==='th'){lang=u.get('lang')}
+  window.__preset={gpu:u.get('gpu'),model:u.get('model'),mode:u.get('mode')};
+}catch(e){window.__preset={}}})();
+
+function curModel(){
+  const base=MODELS.find(m=>m.id===$('model').value);
+  const m={...base};
+  if(base.id==='custom'||$('customWrap').open){
+    const v=(id,d)=>{const x=parseFloat($(id).value);return isFinite(x)&&x>0?x:d};
+    m.p=v('cParams',base.p);m.a=v('cActive',base.a);m.L=v('cLayers',base.L);m.kv=v('cKV',base.kv);m.hd=v('cHD',base.hd);
+    if(base.id==='custom'){m.mla=false;m.swa=null}
+  }
+  m.h=Math.round(Math.sqrt((m.a*1e9)/(12*m.L))/128)*128||1024;
+  m.name=modelName(m);
+  return m;
+}
+function curGPU(){return GPUS.find(g=>g.id===$('gpu').value)}
+function usable(g){return (g.c==='ot'&&g.id!=='custom'&&g.bw<1000)?0.75:USABLE}
+const sec=x=>x<1?Math.round(x*1000)+' ms':fmt(x,1)+' s';
+
+// ---------- inference ----------
+function estInf(m,g,n,o){
+  const P=t('p'),K=t('k'),S=t('sInf');
+  const qb=QUANTS.find(q=>q.id===o.quant).b, kb=KVQ.find(q=>q.id===o.kvq).b;
+  const weights=m.p*1e9*qb;
+  let kvTok=m.mla?m.L*m.hd*kb:2*m.L*m.kv*m.hd*kb;
+  let kvEff=kvTok*o.ctx;
+  if(m.swa){const local=kvTok*m.swa.f,global=kvTok*(1-m.swa.f);kvEff=global*o.ctx+local*Math.min(o.ctx,m.swa.w)}
+  const kv=kvEff*o.users;
+  const activeBytes=m.a*1e9*qb;
+  const act=Math.max(0.3*GB,0.07*activeBytes)+o.users*VOCAB*4;
+  const runtime=n*(0.8*GB+(n>1?0.5*GB:0));
+  const overhead=act+runtime, total=weights+kv+overhead;
+  const uf=usable(g), cap=g.v*GiB*n*uf, fits=total<=cap, over=Math.max(0,total-cap);
+  const bwTot=g.bw*GB*n*(n>1?0.85:1)*o.eff;
+  const tfTot=g.tf*1e12*n*(n>1?0.9:1)*0.45;
+  const kvRead=kvEff*0.5;
+  let memT;
+  if(fits||!o.offload){memT=(activeBytes+o.users*kvRead)/bwTot}
+  else{const onGpu=Math.max(0,activeBytes-over*(m.a/m.p));memT=onGpu/bwTot+(activeBytes-onGpu)/(45*GB)+o.users*kvRead/bwTot}
+  const compT=o.users*2*m.a*1e9/tfTot;
+  const step=Math.max(memT,compT);
+  const ttft=tok=>tok*2*m.a*1e9/tfTot+0.02+(fits||!o.offload?0:tok*0.002);
+  const free=cap-weights-overhead, perTok=m.swa?kvTok*(1-m.swa.f):kvTok;
+  const maxCtx=free>0?Math.floor(free/(perTok*o.users)):0;
+  return {total,cap,fits,over,uf,speed:1/step,maxCtx,
+    parts:[[P.w,weights,'var(--w)',P.wB(fmt(m.p,2),qb),'w'],
+           [P.kv,kv,'var(--k)',P.kvB(fmt(kvTok/1024,1),fmt0(o.ctx),o.users,!!m.swa),'kv'],
+           [P.act,act,'var(--o)',P.actB,'o'],
+           [P.rt,runtime,'var(--o)',P.rtB(n,'0.8'),'o']],
+    kpis:[[K.tpsUser,`${fmt(1/step,1/step<10?1:0)}<small> tok/s</small>`],
+          [K.tpsAll,`${fmt(o.users/step,o.users/step<10?1:0)}<small> tok/s</small>`],
+          [K.ttft,sec(ttft(o.prompt))],[K.ttftFull,sec(ttft(o.ctx))],
+          [K.kvTok,`${fmt(kvTok/1024,1)}<small> KB</small>`],
+          [K.maxCtx,maxCtx>0?`${maxCtx>=1024?fmt0(maxCtx/1024)+'K':fmt0(maxCtx)}<small> ${t('tokUser')}</small>`:'—']],
+    desc:`${m.name} · ${QUANTS.find(q=>q.id===o.quant).n} · ${fmt0(o.ctx)} tokens × ${o.users} ${o.users>1?t('users'):t('user')} ${t('on')} ${n}× ${gpuName(g)}`,
+    speedNote:((!fits&&o.offload)?S.offl:(compT>memT?S.comp:S.mem))+(m.a<m.p?S.moe:'')};
+}
+
+// ---------- fine-tuning ----------
+function estFT(m,g,n,o){
+  const P=t('p'),K=t('k'),S=t('sFt');
+  const Pn=m.p*1e9, shard=n;
+  let base,grad,opt,master,trainable,desc;
+  if(o.ftm==='full'){
+    base=Pn*2; grad=Pn*2; master=Pn*4; opt=Pn*(o.opt8?2:8); trainable=Pn;
+    desc='Full FT BF16 mixed'+(o.opt8?' · 8-bit AdamW':'');
+  }else{
+    trainable=o.rank*2*m.h*7*m.L;
+    base=Pn*(o.ftm==='qlora'?0.56:2); grad=trainable*2; master=trainable*4; opt=trainable*8;
+    desc=(o.ftm==='qlora'?'QLoRA (NF4 base)':'LoRA (BF16 base)')+` r=${o.rank}`;
+  }
+  const states=(grad+master+opt)/shard, baseS=base/shard;
+  const s=o.seq,b=o.bs,h=m.h;
+  const perLayerFull=s*b*h*34;
+  const attnScores=o.fa?0:s*s*b*(h/128)*2;
+  const act=o.gck?(m.L*s*b*h*2+perLayerFull+attnScores):m.L*(perLayerFull+attnScores);
+  const logits=s*b*VOCAB*8;
+  const runtime=n*(1.2*GB+(n>1?0.6*GB:0));
+  const total=baseS+states+act+logits+runtime;
+  const uf=usable(g), cap=g.v*GiB*uf, fits=total<=cap, over=Math.max(0,total-cap);
+  const flopsTok=(o.ftm==='full'?6:4)*m.a*1e9+(o.gck?2*m.a*1e9:0);
+  const mfu=o.ftm==='full'?0.40:o.ftm==='lora'?0.32:0.25;
+  const tfTot=g.tf*1e12*n*(n>1?0.88:1)*mfu;
+  const tps=fits?tfTot/flopsTok:0;
+  const epochH=tps?o.ds*1e6/tps/3600:0;
+  const stepT=tps?s*b*n/tps:0;
+  const maxBs=Math.max(0,Math.floor((cap-baseS-states-runtime)/((act+logits)/b)));
+  const sh=n>1?P.sharded(n):'';
+  return {total,cap,fits,over,uf,speed:tps,maxBs,
+    parts:[[P.base+sh,baseS,'var(--w)',o.ftm==='qlora'?P.nf4(fmt(m.p,2)):P.bf16(fmt(m.p,2)),'w'],
+           [P.states+sh,states,'var(--g)',o.ftm==='full'?P.full(o.opt8?'10':'14',fmt(m.p,2)):P.lora(fmt0(trainable/1e6)),'states'],
+           [P.actFt,act,'var(--k)',P.actFtB(fmt0(s),b,m.L,o.gck,o.fa),'act'],
+           [P.logits,logits,'var(--o)',P.logB(fmt0(s*b),fmt0(VOCAB)),'o'],
+           [P.rt,runtime,'var(--o)',P.rtB(n,'1.2'),'o']],
+    kpis:[[K.thr,`${fmt0(tps)}<small> tok/s</small>`],
+          [K.epoch,epochH?(epochH<1?Math.round(epochH*60)+' '+t('min'):fmt(epochH,1)+' '+t('hr')):'—'],
+          [K.step,stepT?sec(stepT):'—'],
+          [K.train,`${trainable>=1e9?fmt(trainable/1e9,2)+'B':fmt0(trainable/1e6)+'M'}`],
+          [K.frac,`${fmt(trainable/Pn*100,trainable/Pn<0.01?2:0)}<small> %</small>`],
+          [K.maxBs,maxBs>0?`${maxBs}`:'—']],
+    desc:`${m.name} · ${desc} · seq ${fmt0(s)} × batch ${b} ${t('on')} ${n}× ${gpuName(g)}`,
+    speedNote:S.mfu(Math.round(mfu*100))+S[o.ftm]+(o.gck?S.gck:'')+(n>1?S.multi:'')+(m.a<m.p?S.moe:'')};
+}
+
+function opts(){return {
+  quant:$('quant').value,kvq:$('kvq').value,ctx:Math.max(256,parseInt($('ctx').value)||8192),users:Math.max(1,parseInt($('users').value)||1),prompt:Math.max(16,parseInt($('prompt').value)||1024),eff:parseFloat($('eff').value),offload:mode==='inf'&&$('offload').checked,
+  ftm:$('ftm').value,rank:parseInt($('rank').value),seq:Math.max(128,parseInt($('seq').value)||2048),bs:Math.max(1,parseInt($('bs').value)||1),gck:$('gck').checked,fa:$('fa').checked,opt8:$('opt8').checked,ds:Math.max(0.1,parseFloat($('ds').value)||10)}}
+const est=(m,g,n,o)=>mode==='inf'?estInf(m,g,n,o):estFT(m,g,n,o);
+
+function setMode(k){
+  mode=k;$('mInf').setAttribute('aria-pressed',k==='inf');$('mFt').setAttribute('aria-pressed',k==='ft');
+  $('infFields').hidden=k!=='inf';$('ftFields').hidden=k!=='ft';$('effWrap').hidden=k!=='inf';$('offWrap').hidden=k!=='inf';
+  update();
+}
+
+function update(){
+  const m=curModel(),g=curGPU(),n=parseInt($('ngpu').value),o=opts(),ft=mode==='ft';
+  $('ngpuHint').textContent=t(ft?'ngpuFt':'ngpuInf');$('resTitle').textContent=t(ft?'resFt':'resInf');
+  $('modelHint').textContent=`${fmt(m.p,2)}B params${m.a!==m.p?` · active ${fmt(m.a,1)}B`:''} · ${m.L} layers · ${m.mla?'MLA 576 dims':`${m.kv} KV heads × ${m.hd}`}${m.swa?' · sliding-window':''}${ft?` · hidden ≈ ${fmt0(m.h)}`:''}`;
+  $('gpuHint').textContent=`${g.v} GB · ${fmt0(g.bw)} GB/s · ~${g.tf} TFLOPS FP16${g.tdp?` · ${g.tdp} W`:''}${g.note?' · '+g.note[lang]:''}`;
+  [...$('ctxChips').children].forEach(b=>b.setAttribute('aria-pressed',parseInt(b.dataset.v)===o.ctx));
+  const r=est(m,g,n,o);
+  const pill=$('pill'),pct=r.total/r.cap;
+  if(r.fits&&pct<=0.85){pill.className='pill ok';pill.textContent=t('ok')}
+  else if(r.fits){pill.className='pill warn';pill.textContent=t('tight')}
+  else if(o.offload){pill.className='pill warn';pill.textContent=t('offl')(fmt(r.over/GB))}
+  else{pill.className='pill bad';pill.textContent=t('bad')(fmt(r.over/GB),ft)}
+  $('for').textContent=r.desc;
+  $('vramBig').innerHTML=`${fmt(r.total/GB)} <small>GB ${t(ft?'perCard':'need')}</small>`;
+  $('vramCap').textContent=ft?t('capFt')(fmt(r.cap/GB),Math.round(r.uf*100)):t('capInf')(fmt(r.cap/GB),n*g.v,Math.round(r.uf*100));
+  const scale=Math.max(r.total,r.cap);
+  const bar=$('bar');bar.querySelectorAll('span').forEach(e=>e.remove());
+  r.parts.forEach(([,b,col])=>{const s=document.createElement('span');s.style.width=(b/scale*100)+'%';s.style.background=col;bar.insertBefore(s,$('capline'))});
+  $('capline').style.left=(r.cap/scale*100)+'%';
+  const seen=new Set(),LG=t('lg');$('legend').innerHTML=r.parts.filter(p=>!seen.has(p[4])&&seen.add(p[4])).map(p=>`<span><i style="background:${p[2]}"></i>${LG[p[4]]}</span>`).join('');
+  $('kpis').innerHTML=r.kpis.map(([l,v])=>`<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div></div>`).join('');
+  $('breakdown').innerHTML=r.parts.map(([a,b,,c])=>`<tr><td>${a}</td><td class="n">${fmt(b/GB)}</td><td class="cat">${c}</td></tr>`).join('')+`<tr style="font-weight:600"><td>${t('total')}${ft?' '+t('perCard'):''}</td><td class="n">${fmt(r.total/GB)}</td><td></td></tr>`;
+  let note='';
+  if(!r.fits&&!o.offload){
+    if(!ft){
+      const need=Math.ceil(r.total/(g.v*GiB*r.uf));note=t('opt')+t('use')(need,gpuName(g));
+      const lighter=QUANTS.filter(q=>q.b<QUANTS.find(x=>x.id===o.quant).b).find(q=>estInf(m,g,n,{...o,quant:q.id}).fits);
+      if(lighter)note+=t('orQuant')(lighter.n);
+      if(r.maxCtx>0)note+=t('orCtx')(fmt0(r.maxCtx));
+    }else{
+      const alt=[];
+      for(const nn of [2,4,8]){if(nn>n&&estFT(m,g,nn,o).fits){alt.push(t('ftUse')(nn,gpuName(g)));break}}
+      if(o.ftm==='full'&&estFT(m,g,n,{...o,ftm:'lora'}).fits)alt.push(t('toLora'));
+      if(o.ftm!=='qlora'&&estFT(m,g,n,{...o,ftm:'qlora'}).fits)alt.push(t('toQlora'));
+      if(!o.gck&&estFT(m,g,n,{...o,gck:true}).fits)alt.push(t('onGck'));
+      if(o.bs>1&&estFT(m,g,n,{...o,bs:1}).fits)alt.push(t('bs1'));
+      if(o.seq>512&&estFT(m,g,n,{...o,seq:Math.max(512,o.seq/2)}).fits)alt.push(t('halfSeq')(fmt0(Math.max(512,o.seq/2))));
+      note=alt.length?t('opt')+alt.join(' · '):t('noFit');
+    }
+  }else if(r.fits&&pct>0.85){note=t('tightNote')(ft)}
+  $('noteMain').textContent=note;$('noteMain').className='note'+(note?' alert':'');
+  $('noteSpeed').textContent=r.speedNote;
+  renderFit(m,o);
+  $('qGpu').value=`${n}× ${gpuName(g)}`;
+  buildQuote();
+}
+
+function renderFit(m,o){
+  m=m||curModel();o=o||opts();
+  const cur=$('gpu').value,CN=t('catName');
+  $('fitHint').textContent=t(mode==='inf'?'fitInf':'fitFt');
+  const rows=GPUS.filter(g=>g.id!=='custom'&&(catFilter==='all'||g.c===catFilter)).map(g=>{
+    let best=null;
+    for(const n of [1,2,3,4,6,8]){const r=est(m,g,n,{...o,offload:false});if(r.fits){best={n,r};break}}
+    return {g,best};
+  });
+  rows.sort((a,b)=>{const an=a.best?a.best.n:99,bn=b.best?b.best.n:99;if(an!==bn)return an-bn;return (b.best?b.best.r.speed:0)-(a.best?a.best.r.speed:0)});
+  $('fitBody').innerHTML=rows.map(({g,best})=>{
+    let st,cls;
+    if(!best){st=t('stNo');cls='bad'}
+    else if(best.n===1){const p=best.r.total/best.r.cap;st=p>0.85?t('stTight'):t('stOk');cls=p>0.85?'warn':'ok'}
+    else{st=t('stN')(best.n);cls='warn'}
+    const sp=best?(best.r.speed<10?fmt(best.r.speed,1):fmt0(best.r.speed)):'—';
+    return `<tr class="${g.id===cur?'cur':''}"><td><div class="gpu-name">${g.n}</div><div class="cat">${CN[g.c].split(' (')[0]}</div></td><td class="n">${g.v} GB</td><td class="n">${fmt0(g.bw)}</td><td class="n">${g.tdp?g.tdp+' W':'—'}</td><td class="n">${best?best.n:'—'}</td><td class="n">${best?fmt(best.r.total/GB,0)+' / '+fmt(best.r.cap/GB,0):'—'}</td><td class="n">${sp}</td><td><span class="st ${cls}">${st}</span></td></tr>`;
+  }).join('');
+}
+
+// ---------- quote ----------
+const EMAIL='sales@klmogroup.com', LINE_ID='@462lkloe';
+function buildQuote(){
+  const m=curModel(),g=curGPU(),n=parseInt($('ngpu').value),o=opts(),r=est(m,g,n,o),M=t('m');
+  const v=id=>$(id).value.trim();
+  const L=[M.title,'',`${M.name}: ${v('qName')||'-'}`,`${M.contact}: ${v('qContact')||'-'}`,'',M.spec,
+    `${M.type}: ${v('qType')} × ${v('qQty')||1}`,
+    `${M.cpu}: ${v('qCpu')}${v('qCores')?` · ${v('qCores')} ${M.cores}`:''}${v('qClock')?` · ${v('qClock')} GHz`:''}`,
+    `${M.ram}: ${v('qRam')?v('qRam')+' GB':M.rec}`,
+    `${M.disk}: ${v('qDisk')?v('qDisk')+' TB ':''}${v('qDiskT')}`,
+    `${M.gpu}: ${v('qGpu')}`];
+  if(v('qNote'))L.push(`${M.note}: ${v('qNote')}`);
+  L.push('',M.res,`${M.mode}: ${mode==='inf'?'Inference':'Fine-tuning'}`,`${M.cfg}: ${r.desc}`,
+    `${M.vram}: ${fmt(r.total/GB)} GB${mode==='ft'?' '+t('perCard'):''} / ${M.usable} ${fmt(r.cap/GB)} GB → ${r.fits?M.fits:M.short(fmt(r.over/GB))}`,
+    `${M.speed}: ${mode==='inf'?fmt(r.speed,r.speed<10?1:0)+' '+M.perUser:fmt0(r.speed)+' '+M.training}`);
+  const txt=L.join('\n');
+  $('qText').value=txt;
+  $('mailBtn').href=`mailto:${EMAIL}?subject=${encodeURIComponent(M.subj(v('qName')))}&body=${encodeURIComponent(txt)}`;
+}
+$('qform').addEventListener('submit',e=>{e.preventDefault();buildQuote();$('toast').textContent=t('built');$('qText').focus()});
+['qType','qCpu','qCores','qClock','qRam','qDisk','qDiskT','qQty','qGpu','qName','qContact','qNote'].forEach(id=>$(id).addEventListener('input',buildQuote));
+$('copyBtn').addEventListener('click',async()=>{
+  const x=$('qText');
+  try{await navigator.clipboard.writeText(x.value);$('toast').textContent=t('copied')(EMAIL)}
+  catch(e){x.focus();x.select();$('toast').textContent=t('selected')}
+});
+try{new QRCode($('qr'),{text:'https://line.me/R/ti/p/%40462lkloe',width:120,height:120,correctLevel:QRCode.CorrectLevel.M})}catch(e){$('qr').textContent='LINE '+LINE_ID}
+
+function seedCustom(){const b=MODELS.find(m=>m.id===$('model').value);$('cParams').value=b.p;$('cActive').value=b.a;$('cLayers').value=b.L;$('cKV').value=b.mla?1:b.kv;$('cHD').value=b.hd;if(b.id==='custom')$('customWrap').open=true}
+
+try{const s=localStorage.getItem('klit-lang');if((s==='en'||s==='th')&&!new URLSearchParams(location.search).get('lang'))lang=s}catch(e){}
+applyLang();
+if(window.__preset){const p=window.__preset;if(p.gpu&&GPUS.some(g=>g.id===p.gpu))$('gpu').value=p.gpu;if(p.model&&MODELS.some(m=>m.id===p.model))$('model').value=p.model}
+seedCustom();
+$('model').addEventListener('change',()=>{seedCustom();update()});
+['quant','kvq','ctx','users','prompt','gpu','ngpu','eff','offload','cParams','cActive','cLayers','cKV','cHD','ftm','rank','seq','bs','gck','fa','opt8','ds'].forEach(id=>$(id).addEventListener('input',update));
+$('customWrap').addEventListener('toggle',update);
+$('mInf').onclick=()=>setMode('inf');$('mFt').onclick=()=>setMode('ft');
+const setLang=l=>{lang=l;try{localStorage.setItem('klit-lang',l)}catch(e){}applyLang();update()};
+$('lTh').onclick=()=>setLang('th');$('lEn').onclick=()=>setLang('en');
+setMode(window.__preset&&window.__preset.mode==='ft'?'ft':'inf');
+</script>
+
+</body>
+</html>
