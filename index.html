@@ -124,6 +124,9 @@ td.n,th.n{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-
 tr.cur td{background:color-mix(in srgb,var(--brand) 10%,transparent)}
 .cat{font-size:11px;color:var(--muted)}
 .gpu-name{font-weight:500;white-space:nowrap}
+a.shop,a.shoplink{color:var(--brand-ink);font-weight:500;text-decoration:none;white-space:nowrap}
+a.shop:hover,a.shoplink:hover{text-decoration:underline}
+a.shoplink{font-size:12.5px;margin-top:2px}
 .quote .qgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
 @media(max-width:820px){.quote .qgrid{grid-template-columns:minmax(0,1fr)}}
 .qsum{background:var(--bg);border:1px solid var(--line);border-radius:var(--r);padding:12px}
@@ -227,6 +230,7 @@ footer a{color:var(--brand-ink)}
     <label for="gpu">GPU</label>
     <select id="gpu"></select>
     <span class="hint" id="gpuHint"></span>
+    <a class="shoplink" id="gpuShop" href="#" target="_blank" rel="noopener" hidden></a>
   </div>
   <div class="row">
     <div class="field"><label for="ngpu" data-i18n="l.ngpu"></label><select id="ngpu"><option>1</option><option>2</option><option>3</option><option>4</option><option>6</option><option>8</option></select><span class="hint" id="ngpuHint"></span></div>
@@ -363,6 +367,7 @@ const I18N={th:{
  'q.diskT':'ชนิด','q.qty':'จำนวนเครื่อง','q.gpu':'GPU (ดึงจากผลประเมินด้านบน แก้ได้)','q.name':'ชื่อ / บริษัท','q.contact':'อีเมลหรือเบอร์ติดต่อกลับ','q.note':'ความต้องการเพิ่มเติม / งบประมาณ (ถ้ามี)',
  'q.build':'สร้างข้อความขอใบเสนอราคา','q.promise':'เมื่อได้รับข้อความ ทีมเทคนิค kl-itonline จะรีบติดต่อกลับท่านโดยเร็วที่สุด เพื่อจัดสเปกให้ตรงกับงานของท่าน',
  'q.msg':'ข้อความที่จะส่ง (แก้ได้ก่อนส่ง)','q.copy':'คัดลอกข้อความ','q.mail':'เปิดโปรแกรมอีเมล','q.scan':'สแกนเพิ่มเพื่อน LINE แล้ววางข้อความ หรือส่งอีเมลมาที่','q.email':'อีเมล','q.tel':'โทร','q.fallback':'ถ้าปุ่มอีเมลไม่เปิด ให้กดคัดลอกแล้ววางในอีเมลของท่านเองได้ครับ',
+ shop:'ดูเครื่องที่ใช้การ์ดนี้ →',shopHint:'KL-iT จำหน่ายเป็นเครื่องครบชุด (workstation / server) ไม่จำหน่ายการ์ดแยก',
  built:'สร้างข้อความแล้ว — กดคัดลอก หรือเปิดอีเมลด้านล่าง',copied:e=>'คัดลอกแล้ว — วางใน LINE หรืออีเมลถึง '+e,selected:'เลือกข้อความให้แล้ว กด Ctrl+C / ⌘C เพื่อคัดลอก',
  m:{title:'ขอใบเสนอราคาเครื่องสำหรับงาน AI / LLM (จาก KL-iT LLM Sizing Calculator)',name:'ชื่อ/บริษัท',contact:'ติดต่อกลับ',spec:'--- สเปกที่ต้องการ ---',type:'ประเภทเครื่อง',cpu:'CPU',cores:'cores',ram:'RAM',rec:'ตามที่แนะนำ',disk:'Storage',gpu:'GPU',note:'เพิ่มเติม',res:'--- ผลประเมินจากเครื่องคำนวณ ---',mode:'โหมด',cfg:'Config',vram:'VRAM ที่ต้องใช้',usable:'ใช้ได้',fits:'พอ',short:g=>`ไม่พอ ขาด ${g} GB`,speed:'ความเร็วประเมิน',perUser:'tok/s ต่อผู้ใช้',training:'tok/s training',subj:n=>'ขอใบเสนอราคาเครื่อง AI/LLM — '+(n||'ลูกค้าใหม่')},
  'h.faq':'คำถามที่พบบ่อย · การเลือก GPU สำหรับ LLM',
@@ -411,6 +416,7 @@ const I18N={th:{
  'q.diskT':'Type','q.qty':'Quantity','q.gpu':'GPU (from the estimate above, editable)','q.name':'Name / company','q.contact':'Email or phone for reply','q.note':'Additional requirements / budget (optional)',
  'q.build':'Generate quote request','q.promise':'Once we receive your message, the kl-itonline technical team will contact you as soon as possible to finalize a specification that fits your workload.',
  'q.msg':'Message to send (editable)','q.copy':'Copy message','q.mail':'Open email app','q.scan':'Scan to add us on LINE and paste the message, or email us at','q.email':'Email','q.tel':'Tel','q.fallback':'If the email button does nothing, copy the message and paste it into your own email client.',
+ shop:'View systems with this GPU →',shopHint:'KL-iT sells complete systems (workstation / server), not standalone cards',
  built:'Message ready — copy it or open your email app below',copied:e=>'Copied — paste into LINE or an email to '+e,selected:'Text selected — press Ctrl+C / ⌘C to copy',
  m:{title:'Quote request for an AI / LLM system (from KL-iT LLM Sizing Calculator)',name:'Name/company',contact:'Reply to',spec:'--- Requested spec ---',type:'System type',cpu:'CPU',cores:'cores',ram:'RAM',rec:'as recommended',disk:'Storage',gpu:'GPU',note:'Notes',res:'--- Calculator estimate ---',mode:'Mode',cfg:'Config',vram:'VRAM required',usable:'usable',fits:'fits',short:g=>`short by ${g} GB`,speed:'Estimated speed',perUser:'tok/s per user',training:'tok/s training',subj:n=>'Quote request: AI/LLM system — '+(n||'new customer')},
  'h.faq':'FAQ · choosing a GPU for LLMs',
@@ -491,6 +497,15 @@ const GPUS=[
  {id:'custom',n:'',c:'ot',v:24,bw:800,tf:60,tdp:0},
 ];
 const gpuName=g=>g.id==='custom'?t('customGpu'):g.n;
+// Where to buy: KL-iT sells complete systems, so GPUs link to the system category / product that carries them
+const SHOP={
+  ws:'https://www.kl-itonline.com/category/1451-456/hp',
+  dc:'https://www.kl-itonline.com/category/1448',
+  spark:'https://www.kl-itonline.com/product/58792-73087/hp-zgx-nano-ai-station-g1n-e55x7ptakl',
+  strix:'https://www.kl-itonline.com/product/58786-73081/hp-z2-mini-g1a-d87dmptakl',
+  '5060ti16':'https://www.kl-itonline.com/product/58802-73097/hp-desktop-pc-hp-omen-16l-tg03-1002d-dc0k2pa-akl-dc0k2paakl',
+};
+const shopUrl=g=>SHOP[g.id]||(g.c==='ws'||g.c==='dc'?SHOP[g.c]:null);
 
 const MODELS=[
  {g:'Llama (Meta)',id:'l3.2-1b',n:'Llama 3.2 1B',p:1.24,a:1.24,L:16,kv:8,hd:64},
@@ -720,6 +735,7 @@ function update(){
   $('ngpuHint').textContent=t(ft?'ngpuFt':'ngpuInf');$('resTitle').textContent=t(ft?'resFt':'resInf');
   $('modelHint').textContent=`${fmt(m.p,2)}B params${m.a!==m.p?` · active ${fmt(m.a,1)}B`:''} · ${m.L} layers · ${m.mla?'MLA 576 dims':`${m.kv} KV heads × ${m.hd}`}${m.swa?' · sliding-window':''}${ft?` · hidden ≈ ${fmt0(m.h)}`:''}`;
   $('gpuHint').textContent=`${g.v} GB · ${fmt0(g.bw)} GB/s · ~${g.tf} TFLOPS FP16${g.tdp?` · ${g.tdp} W`:''}${g.note?' · '+g.note[lang]:''}`;
+  const su=shopUrl(g);$('gpuShop').hidden=!su;if(su){$('gpuShop').href=su;$('gpuShop').textContent=t('shop');$('gpuShop').title=t('shopHint')}
   [...$('ctxChips').children].forEach(b=>b.setAttribute('aria-pressed',parseInt(b.dataset.v)===o.ctx));
   const r=est(m,g,n,o);
   const pill=$('pill'),pct=r.total/r.cap;
@@ -778,7 +794,7 @@ function renderFit(m,o){
     else if(best.n===1){const p=best.r.total/best.r.cap;st=p>0.85?t('stTight'):t('stOk');cls=p>0.85?'warn':'ok'}
     else{st=t('stN')(best.n);cls='warn'}
     const sp=best?(best.r.speed<10?fmt(best.r.speed,1):fmt0(best.r.speed)):'—';
-    return `<tr class="${g.id===cur?'cur':''}"><td><div class="gpu-name">${g.n}</div><div class="cat">${CN[g.c].split(' (')[0]}</div></td><td class="n">${g.v} GB</td><td class="n">${fmt0(g.bw)}</td><td class="n">${g.tdp?g.tdp+' W':'—'}</td><td class="n">${best?best.n:'—'}</td><td class="n">${best?fmt(best.r.total/GB,0)+' / '+fmt(best.r.cap/GB,0):'—'}</td><td class="n">${sp}</td><td><span class="st ${cls}">${st}</span></td></tr>`;
+    return `<tr class="${g.id===cur?'cur':''}"><td><div class="gpu-name">${g.n}</div><div class="cat">${CN[g.c].split(' (')[0]}${shopUrl(g)?` · <a class="shop" href="${shopUrl(g)}" target="_blank" rel="noopener">${t('shop')}</a>`:''}</div></td><td class="n">${g.v} GB</td><td class="n">${fmt0(g.bw)}</td><td class="n">${g.tdp?g.tdp+' W':'—'}</td><td class="n">${best?best.n:'—'}</td><td class="n">${best?fmt(best.r.total/GB,0)+' / '+fmt(best.r.cap/GB,0):'—'}</td><td class="n">${sp}</td><td><span class="st ${cls}">${st}</span></td></tr>`;
   }).join('');
 }
 
